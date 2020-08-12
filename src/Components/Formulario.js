@@ -1,8 +1,9 @@
 import React, {useState} from 'react';
 import PropTypes from 'prop-types';
 import styled from "@emotion/styled";
+import {calcularMarca, obtenerDiferenciaAnyo, obtenerPlan} from "../helper";
 
-Formulario.propTypes = {};
+
 
 const Campo = styled.div`
     display: flex;
@@ -39,16 +40,25 @@ const Boton = styled.button`
         background-color: #26C6DA;
     }
 `
+const Error = styled.div`
+     background-color: red;
+     color: white;
+     padding: 1rem;
+     width: 100%;
+     text-align: center;
+     margin-bottom: 2rem;
+`
 
-function Formulario(props) {
+const Formulario = ({setResumen,setCargando}) => {
 
     const [datos, setDatos] = useState({
         marca: '',
         anyo: '',
         plan: ''
     });
-    //Extraer los valores del state
+    const [error, setError] = useState(false);
 
+    //Extraer los valores del state
     const {marca, anyo, plan} = datos;
 
     //Leer datos del formulario y colorcarlos en el state
@@ -59,8 +69,44 @@ function Formulario(props) {
             }
         );
     }
+    //submit del form
+    const handleSubmit =e=>{
+        e.preventDefault();
+        if(
+            anyo.trim() === '' ||
+            marca.trim() === '' ||
+            plan.trim() === ''
+        ){
+            setError(true);
+            return;
+        }
+        setError(false);
+        //precio base
+        let resultado = 2000;
+        //Diferencia de años
+        const diferencia = obtenerDiferenciaAnyo(anyo);
+        resultado -= ((diferencia * 3) * resultado) /100;
+        //Precio por marca
+        resultado = calcularMarca(marca) * resultado;
+        //Plan
+        resultado = parseFloat((obtenerPlan(plan) * resultado).toString()).toFixed(2);
+        setCargando(true);
+
+        setTimeout(()=>{
+            setCargando(false);
+            setResumen({
+                cotizacion: resultado,
+                datos:datos
+            });
+
+        },3000);
+
+
+    }
     return (
-        <form>
+        <form
+            onSubmit={handleSubmit}>
+            {error ?  <Error> Todos los campos son obligatorios </Error> : null}
             <Campo>
                 <Lable>Marca</Lable>
                 <Select
@@ -107,7 +153,7 @@ function Formulario(props) {
                     checked={plan === 'completo'}
                     onChange={guardarDatos}/> Completo
             </Campo>
-            <Boton type="button" value="">Cotizar </Boton>
+            <Boton type="submit" value="">Cotizar </Boton>
         </form>
     );
 }
